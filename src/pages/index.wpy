@@ -1,0 +1,43 @@
+<style lang="less">
+.container{
+	.movable{
+		width: 750rpx;
+		height: 160rpx;
+		background-color: red;
+	}
+	.fixed{
+		width: 200rpx;
+		height: 160rpx;
+	}
+}
+</style>
+<template>
+	<view class="container">
+		<test :width="width" :height="height" :offset="offset" :x="x">
+			<view slot="movable" class="movable">123</view>
+			<view slot="fixed" class="fixed">456</view>
+		</test>
+	</view>
+</template>
+
+<script>
+	import wepy from 'wepy';
+	import Test from '../components/test';
+
+	export default class Index extends wepy.page {
+		config = {
+			navigationBarTitleText: 'test'
+		}
+
+		components = {
+			test: Test
+		}
+
+		data = {
+			width: 750,
+			height: 160,
+			offset: 200,
+			x: 200
+		}
+	}
+</script>

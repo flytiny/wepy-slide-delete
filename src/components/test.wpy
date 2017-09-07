@@ -1,0 +1,126 @@
+<style lang="less">
+.v-test {
+
+}
+</style>
+<template>
+	<view class="v-test">
+		<movable-area style="width: {{width + offset}}rpx; height: {{height}}rpx; overflow: hidden;margin-left:-{{offset}}rpx;">
+			<movable-view out-of-bounds="true" direction="horizontal" style="width: {{width}}rpx; height: {{height}}rpx; z-index:10;"
+			inertia="true" x="{{x}}" @touchstart="touchStart" @touchmove="touchMove" @touchend="touchEnd" @touchcancel="touchEnd">
+				<slot name="movable"></slot>
+			</movable-view>
+			<view style="position: absolute;right: 0;z-index:5;">
+				<slot name="fixed"></slot>
+			</view>
+		</movable-area>
+	</view>
+</template>
+
+<script>
+import $wepy from 'wepy';
+
+let touchData = {
+	startX: 0,
+	startY: 0,
+	lastX: 0,
+	stack: 0,
+	originX: 0 // 每次滑动时滑块的初始位置
+};
+
+export default class MsgBox extends $wepy.component {
+	props = {
+		width: {
+			type: Number,
+			default: 750
+		}, // 滑块长度
+		height: {
+			type: Number,
+			default: 100
+		}, // 滑块高度
+		offset: {
+			type: Number,
+			default: 120
+		}, // 滑块与滑动区域的差值，也就是删除的宽度
+		x: {
+			type: Number,
+			default: 120
+		} // 滑块初始位置
+	};
+
+	onLoad() {
+
+	}
+
+	methods = {
+		touchStart(e) {
+			touchData.lastX = touchData.startX = e.changedTouches[0].clientX;
+			touchData.startY = e.changedTouches[0].clientY;
+			touchData.originX = this.x;
+		},
+
+		touchMove(e) {
+			let currentX = e.changedTouches[0].clientX;
+			let differ = currentX - touchData.lastX;
+			// 往右为正
+			if (touchData.stack === 0) {
+				touchData.stack = differ;
+			} else if (touchData.stack > 0) {
+				if (differ >= 0) {
+					// 一直往右
+					touchData.stack += differ;
+				} else {
+					// 开始往左了
+					touchData.stack = differ;
+				}
+			} else {
+				if (differ <= 0) {
+					// 一直往左
+					touchData.stack += differ;
+				} else {
+					// 开始往右了
+					touchData.stack = differ;
+				}
+			}
+			touchData.lastX = currentX;
+		},
+
+		touchEnd(e) {
+			let currentX = e.changedTouches[0].clientX;
+			let differX = currentX - touchData.startX;
+			let currentY = e.changedTouches[0].clientY;
+			let differY = currentY - touchData.startY;
+			if (Math.abs(differX) < 5 || Math.abs(differX) < Math.abs(differY)) {
+				// console.log('不应该滑动');
+				this.triggerAnimation(touchData.originX);
+			} else if (touchData.stack < 0) {
+				if (touchData.stack > -5 && differX > -30) {
+					// console.log('应该右');
+					this.triggerAnimation(120);
+				} else {
+					// console.log('应该左');
+					this.triggerAnimation(0);
+				}
+			} else {
+				if (touchData.stack < 5 && differX < 30) {
+					// console.log('应该左');
+					this.triggerAnimation(0);
+				} else {
+					// console.log('应该右');
+					this.triggerAnimation(120);
+				}
+			}
+			touchData.startX = 0;
+			touchData.stack = 0;
+			touchData.lastX = 0;
+			this.$apply();
+		}
+	};
+
+	triggerAnimation(value) {
+		this.x = Math.abs(value - 1);
+		this.$apply();
+		this.x = value;
+	}
+}
+</script>
